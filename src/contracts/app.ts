@@ -1,4 +1,5 @@
 import express from "express";
+import { PublicService } from "./services";
 
 export interface App {
     service: Service;
@@ -7,6 +8,7 @@ export interface App {
 
 export interface Service {
     init(app: App): void;
+    Public: PublicService;
 }
 
 export interface Controller {
