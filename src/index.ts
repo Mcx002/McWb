@@ -3,29 +3,48 @@ import { config } from "./config";
 import { App } from "./contracts/app";
 import { Services } from "./contracts/services";
 import { Controllers } from "./contracts/controllers";
+import { logger } from "./lib/logger";
+import { DatabaseContext } from "./contracts/repository";
 
-function setupExpress(): Express {
-    const app = express();
+function setupExpress(app: App): Express {
+    logger.info("Setting up expressjs...");
 
-    return app;
+    const exApp = express();
+
+    exApp.use("/", app.controller.route());
+
+    logger.info("Expressjs initiated");
+
+    return exApp;
 }
 
-function main() {
+async function booting(): Promise<App> {
+    logger.info("Booting...");
+
     const app: App = {
-        service: new Services(),
         controller: new Controllers(),
+        service: new Services(),
     };
+
+    const db = new DatabaseContext();
+    await db.testConnection();
 
     app.service.init(app);
     app.controller.init(app);
 
-    const express = setupExpress();
+    logger.info("App initiated");
 
-    express.use("/", app.controller.route());
+    return app;
+}
 
+async function main() {
+    const app = await booting();
+    const express = setupExpress(app);
+
+    // Listener
     express.listen(config.appPort, () => {
-        console.log(`Listen on port ${config.appPort}`);
+        logger.info(`Expressjs Listen on port ${config.appPort}`);
     });
 }
 
-main();
+main().catch((_) => logger.error("Failed running app"));
